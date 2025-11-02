@@ -1,0 +1,25 @@
+[package]
+name = "dioxus-react-integration"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Serve React apps with Dioxus runtime and IPC bridge"
+keywords = ["dioxus", "react", "webview", "integration"]
+categories = ["gui", "web-programming"]
+readme = "README.md"
+
+[dependencies]
+dioxus = { workspace = true }
+dioxus-ipc-bridge = { version = "0.1", path = "../dioxus-ipc-bridge" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+once_cell = { workspace = true, optional = true }
+
+[features]
+default = []
+asset-registry = ["once_cell"]
+
+[dev-dependencies]
+dioxus = { workspace = true, features = ["desktop"] }
