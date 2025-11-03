@@ -11,7 +11,7 @@ categories = ["gui", "web-programming"]
 readme = "README.md"
 
 [dependencies]
-dioxus = { version = "0.7.0", default-features = false }
+dioxus = { version = "0.7.0" }
 # Use path for local development, version for published crate
 deckyfx-dioxus-ipc-bridge = { version = "0.1", path = "../dioxus-ipc-bridge" }
 serde = { version = "1.0", features = ["derive"] }
