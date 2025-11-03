@@ -1,26 +1,26 @@
 [package]
 name = "deckyfx-dioxus-react-integration"
 version = "0.1.0"
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+edition = "2021"
+authors = ["Decky Fx"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/deckyfx/LearningDioxus"
 description = "Serve React apps with Dioxus runtime and IPC bridge"
 keywords = ["dioxus", "react", "webview", "integration"]
 categories = ["gui", "web-programming"]
 readme = "README.md"
 
 [dependencies]
-dioxus = { workspace = true }
+dioxus = { version = "0.7.0", default-features = false }
 # Use path for local development, version for published crate
 deckyfx-dioxus-ipc-bridge = { version = "0.1", path = "../dioxus-ipc-bridge" }
-serde = { workspace = true }
-serde_json = { workspace = true }
-once_cell = { workspace = true, optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+once_cell = { version = "1.20", optional = true }
 
 [features]
 default = []
 asset-registry = ["once_cell"]
 
 [dev-dependencies]
-dioxus = { workspace = true, features = ["desktop"] }
+dioxus = { version = "0.7.0", features = ["desktop"] }
