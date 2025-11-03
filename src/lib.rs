@@ -22,5 +22,5 @@ pub mod prelude {
     pub use crate::assets::AssetRegistry;
 
     // Re-export dioxus-ipc-bridge prelude
-    pub use dioxus_ipc_bridge::prelude::*;
+    pub use deckyfx_dioxus_ipc_bridge::prelude::*;
 }
