@@ -1,5 +1,7 @@
 # dioxus-react-integration
 
+> **DEPRECATED** — This repository is moving to [dx-react/integration](https://github.com/dx-react/integration). This repo will be archived once the migration is complete.
+
 [![Crates.io](https://img.shields.io/crates/v/deckyfx-dioxus-react-integration.svg)](https://crates.io/crates/deckyfx-dioxus-react-integration)
 [![Documentation](https://docs.rs/deckyfx-dioxus-react-integration/badge.svg)](https://docs.rs/deckyfx-dioxus-react-integration)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
