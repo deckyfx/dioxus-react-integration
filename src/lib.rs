@@ -9,14 +9,14 @@ pub mod container;
 pub mod assets;
 
 // Re-export commonly used types
-pub use container::ReactContainer;
+pub use container::{ReactApp, ReactManifest};
 
 #[cfg(feature = "asset-registry")]
 pub use assets::AssetRegistry;
 
 /// Prelude module for convenient imports
 pub mod prelude {
-    pub use crate::container::ReactContainer;
+    pub use crate::container::{ReactApp, ReactManifest};
 
     #[cfg(feature = "asset-registry")]
     pub use crate::assets::AssetRegistry;

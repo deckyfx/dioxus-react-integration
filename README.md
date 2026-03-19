@@ -1,26 +1,38 @@
 # dioxus-react-integration
 
-[![Crates.io](https://img.shields.io/crates/v/dioxus-react-integration.svg)](https://crates.io/crates/dioxus-react-integration)
-[![Documentation](https://docs.rs/dioxus-react-integration/badge.svg)](https://docs.rs/dioxus-react-integration)
+[![Crates.io](https://img.shields.io/crates/v/deckyfx-dioxus-react-integration.svg)](https://crates.io/crates/deckyfx-dioxus-react-integration)
+[![Documentation](https://docs.rs/deckyfx-dioxus-react-integration/badge.svg)](https://docs.rs/deckyfx-dioxus-react-integration)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
 
-Serve **React applications** within the Dioxus runtime, combining the best of both worlds: **native Dioxus capabilities** with **React's ecosystem**.
+Serve **React applications** inside the **Dioxus desktop webview** with automatic IPC bridge injection, CSS/JS loading, and proper asset resolution.
 
 ## Why React + Dioxus?
 
-- **🎯 Use React's Ecosystem**: Leverage thousands of React libraries and components
-- **⚡ Native Performance**: Dioxus provides the native runtime and window management
-- **🔗 Seamless IPC**: Built-in bridge for Rust ↔ React communication
-- **📦 Single Binary**: Package your React app inside your Dioxus binary
-- **🚀 Cross-Platform**: Desktop, web, and mobile from one codebase
+- **Use React's Ecosystem** — thousands of React libraries, Tailwind CSS, shadcn/ui, etc.
+- **Native Performance** — Dioxus provides the native runtime and window management
+- **Seamless IPC** — built-in bridge for Rust <-> React communication
+- **Single Binary** — package your React app inside your Dioxus binary
+- **Cross-Platform** — desktop, web, and mobile from one codebase
 
 ## Features
 
-- **ReactContainer Component**: Drop-in Dioxus component for mounting React apps
-- **Asset Registry**: Dynamic asset loading system (optional feature)
-- **TypeScript Support**: Full type definitions for the IPC bridge
-- **Hot Reload**: Development mode with hot reload support
-- **Builder API**: Clean, fluent configuration interface
+- **`ReactApp` Component** — loads CSS, injects IPC bridge, mounts JS bundle with correct asset resolution
+- **`ReactManifest`** — reads `metadata.json` from your build output to discover hashed chunk filenames
+- **Folder Assets** — uses Dioxus `asset!()` on the build output directory (symlink-friendly, no copying)
+- **`<base href>` Injection** — automatically sets the document base so relative asset paths in JS resolve correctly
+- **Asset Registry** — dynamic asset loading system (optional feature)
+
+## Breaking Changes (v0.2.0)
+
+`ReactContainer` has been removed. Use `ReactApp` instead:
+
+```rust
+// Before (v0.1.x):
+ReactContainer { bundle: BUNDLE, mount_id: "root" }
+
+// After (v0.2.0):
+ReactApp { dir: REACT_DIR, manifest: manifest, bridge: bridge }
+```
 
 ## Quick Start
 
@@ -28,38 +40,21 @@ Serve **React applications** within the Dioxus runtime, combining the best of bo
 
 ```toml
 [dependencies]
-dioxus = "0.7.0-rc.1"
-dioxus-ipc-bridge = "0.1"
-dioxus-react-integration = "0.1"
-
-# Optional: Enable asset registry
-# dioxus-react-integration = { version = "0.1", features = ["asset-registry"] }
+dioxus = "0.7"
+deckyfx-dioxus-ipc-bridge = "0.2"
+deckyfx-dioxus-react-integration = "0.2"
+serde_json = "1.0"
 ```
 
-### Basic Usage
-
-#### 1. Create Your React App
-
-```bash
-# Create React app with Vite
-npm create vite@latest my-react-app -- --template react-ts
-cd my-react-app
-
-# Copy TypeScript definitions
-cp path/to/types.ts src/
-
-# Build for production
-npm run build
-```
-
-#### 2. Use in Dioxus
+### Usage
 
 ```rust
 use dioxus::prelude::*;
-use dioxus_react_integration::prelude::*;
+use deckyfx_dioxus_react_integration::prelude::*;
+use std::time::Duration;
 
-// Define React bundle as asset
-const REACT_BUNDLE: Asset = asset!("/assets/react/bundle.js");
+/// Folder asset pointing to the React build output
+const REACT_DIR: Asset = asset!("/assets/react");
 
 fn main() {
     dioxus::launch(App);
@@ -67,331 +62,125 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    // Set up IPC bridge
+    // 1. Create IPC bridge
+    let bridge = IpcBridge::builder()
+        .timeout(Duration::from_secs(30))
+        .build();
+
+    // 2. Set up routes
     let router = use_signal(|| {
         IpcRouter::builder()
             .route("GET", "/hello/:name", Box::new(HelloHandler))
             .build()
     });
 
-    // Initialize bridge
+    // 3. Start router
     use_effect(move || {
-        let bridge = IpcBridge::builder().build();
-        bridge.initialize();
-
-        // Start IPC listener...
+        router.read().start();
     });
 
+    // 4. Parse build manifest (embedded at compile time)
+    let manifest = ReactManifest::from_json(
+        include_str!("../assets/react/metadata.json")
+    ).expect("invalid metadata.json");
+
+    // 5. Render React app
     rsx! {
-        ReactContainer {
-            bundle: REACT_BUNDLE,
-            mount_id: "react-root".to_string()
+        ReactApp {
+            dir: REACT_DIR,
+            manifest: manifest,
+            bridge: bridge,
         }
     }
 }
 ```
 
-#### 3. Use Bridge in React
+## How It Works
 
-```typescript
-// src/App.tsx
-import { ipcRequest } from './types';
-
-function App() {
-  const [greeting, setGreeting] = useState('');
-
-  useEffect(() => {
-    // Call Rust backend
-    ipcRequest<{ message: string }>('ipc://hello/World')
-      .then(data => setGreeting(data.message));
-  }, []);
-
-  return <div>{greeting}</div>;
-}
-```
-
-## Advanced Usage
-
-### Asset Registry (Optional Feature)
-
-For dynamic asset loading:
-
-```toml
-[dependencies]
-dioxus-react-integration = { version = "0.1", features = ["asset-registry"] }
-```
-
-```rust
-use dioxus_react_integration::prelude::*;
-
-// Register assets
-let mut registry = AssetRegistry::new();
-registry.register("logo".to_string(), asset!("/assets/logo.png").to_string());
-
-// Access from JavaScript
-// window.dioxusBridge.fetch('ipc://assets/logo')
-```
-
-### Custom React Configuration
-
-```rust
-// Advanced setup with custom configuration
-#[component]
-fn App() -> Element {
-    rsx! {
-        // Custom mount point and bundle
-        ReactContainer {
-            bundle: asset!("/dist/main.js"),
-            mount_id: "app-root".to_string()
-        }
-
-        // You can mix Dioxus and React!
-        div {
-            class: "dioxus-sidebar",
-            "This is rendered by Dioxus"
-        }
-    }
-}
-```
-
-### TypeScript Integration
-
-Full TypeScript support with included type definitions:
-
-```typescript
-// src/types.ts (provided by library)
-import { IpcResponse, ipcRequest, subscribeToStreamingTask } from './types';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-// Type-safe requests
-const user = await ipcRequest<User>('ipc://user/123');
-console.log(user.name); // TypeScript knows this exists!
-
-// Type-safe streaming
-subscribeToStreamingTask(taskId, {
-  onProgress: (progress) => {
-    console.log(`${progress.percent}%`);
-  },
-  onComplete: (result) => {
-    console.log('Done!');
-  }
-});
-```
-
-### React Hooks for IPC
-
-Create custom hooks for common patterns:
-
-```typescript
-// useIpcQuery.ts
-import { useState, useEffect } from 'react';
-import { ipcRequest } from './types';
-
-export function useIpcQuery<T>(url: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    ipcRequest<T>(url)
-      .then(setData)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, [url]);
-
-  return { data, loading, error };
-}
-
-// Usage
-function UserProfile({ userId }: { userId: string }) {
-  const { data: user, loading } = useIpcQuery<User>(`ipc://user/${userId}`);
-
-  if (loading) return <div>Loading...</div>;
-  return <div>{user?.name}</div>;
-}
-```
-
-## Building Your React App
-
-### Development Workflow
-
-1. **Develop React app** with hot reload:
-   ```bash
-   npm run dev
-   ```
-
-2. **Build for production**:
-   ```bash
-   npm run build
-   ```
-
-3. **Copy to Dioxus assets**:
-   ```bash
-   cp dist/assets/index-*.js ../dioxus-app/assets/react/bundle.js
-   ```
-
-4. **Run Dioxus app**:
-   ```bash
-   cargo run
-   ```
-
-### Automated Build Script
-
-```bash
-#!/bin/bash
-# build-react.sh
-
-cd react-app
-npm run build
-
-# Copy bundle to Dioxus assets
-cp dist/assets/index-*.js ../dioxus-app/assets/react/bundle.js
-
-echo "React app built and copied to Dioxus assets!"
-```
-
-### Vite Configuration
-
-Optimize your Vite build for Dioxus integration:
-
-```typescript
-// vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    rollupOptions: {
-      output: {
-        // Single bundle file
-        entryFileNames: 'bundle.js',
-        chunkFileNames: 'bundle.js',
-        assetFileNames: 'assets/[name].[ext]'
-      }
-    }
-  }
-});
-```
-
-## Project Structure
-
-Recommended project structure:
+### Build Pipeline
 
 ```
-my-app/
-├── Cargo.toml
-├── src/
-│   └── main.rs           # Dioxus app
-├── assets/
-│   └── react/
-│       └── bundle.js     # Built React bundle
-└── react-app/            # React source
-    ├── package.json
-    ├── src/
-    │   ├── App.tsx
-    │   └── types.ts      # IPC type definitions
-    └── vite.config.ts
+react-app/
+├── src/              ← React source (TypeScript, Tailwind, etc.)
+└── dist/             ← Bun/bundler output (hashed chunks)
+    ├── chunk-xxx.js
+    ├── chunk-yyy.css
+    ├── logo-zzz.svg
+    └── metadata.json ← generated post-build
+
+assets/
+└── react → ../react-app/dist   ← symlink (copy on Windows)
 ```
 
-## Examples
+1. Build React app with any bundler (Bun, Vite, etc.)
+2. Post-build script generates `metadata.json` listing the chunk filenames
+3. Symlink `assets/react` to the build output directory
+4. Dioxus reads the folder via `asset!("/assets/react")` and the manifest via `include_str!`
 
-See the `examples/` directory for complete working examples:
+### What `ReactApp` Does
 
-- `simple_react.rs` - Basic React integration
-- `with_assets.rs` - Using asset registry
-- `full_app/` - Complete example application
+The component handles the full lifecycle:
 
-Run an example:
+1. **`<base href>`** — injects a base tag so relative URLs in JS (like `./logo.svg`) resolve to the asset folder
+2. **Stylesheets** — loads all CSS files listed in the manifest
+3. **IPC bridge** — injects the bridge initialization script before React loads
+4. **Mount point** — creates the `<div id="root">` where React mounts
+5. **JS bundles** — loads all script files listed in the manifest
 
-```bash
-cargo run --example simple_react --features desktop
-```
+### Asset Resolution
+
+Dioxus desktop serves the document at `dioxus://index.html/` but assets live at `/assets/react/`. The `<base href>` tag bridges this gap:
+
+| Reference in JS | Without `<base>` | With `<base href="/assets/react/">` |
+|---|---|---|
+| `"./logo.svg"` | `/logo.svg` (404) | `/assets/react/logo.svg` (works) |
+| `"./chunk.css"` | `/chunk.css` (404) | `/assets/react/chunk.css` (works) |
+
+CSS `url()` references already resolve correctly (relative to the CSS file), so they work regardless.
 
 ## API Reference
 
-### Components
+### `ReactApp` Component
 
-- **`ReactContainer`**: Dioxus component for mounting React apps
-  - `bundle: Asset` - React bundle asset
-  - `mount_id: String` - DOM element ID for mounting
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `dir` | `Asset` | Yes | — | Folder asset from `asset!("/assets/react")` |
+| `manifest` | `ReactManifest` | Yes | — | Build manifest with chunk filenames |
+| `bridge` | `Option<IpcBridge>` | No | `None` | IPC bridge (auto-injects script) |
+| `mount_id` | `String` | No | `"root"` | DOM element ID for React mount |
 
-### Features
+### `ReactManifest`
 
-- **`asset-registry`**: Enable dynamic asset loading system
+```rust
+let manifest = ReactManifest::from_json(
+    include_str!("../assets/react/metadata.json")
+).expect("invalid metadata.json");
+```
 
-### Types (TypeScript)
+Expected JSON format:
+```json
+{
+  "scripts": ["chunk-2b2s0nqa.js"],
+  "styles": ["chunk-q7kzc8rh.css"],
+  "assets": ["logo-kygw735p.svg", "react-c5c0zhye.svg"]
+}
+```
 
-- **`DioxusBridge`**: Main bridge interface
-- **`IpcResponse<T>`**: Response type
-- **`IpcRequestOptions`**: Request configuration
-- **`StreamingProgress`**: Progress updates
-- **`ipcRequest<T>(url)`**: Helper for type-safe requests
-- **`subscribeToStreamingTask()`**: Subscribe to streaming events
+### Optional Features
+
+- **`asset-registry`** — dynamic asset loading system via `AssetRegistry`
 
 ## Platform Support
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Desktop | ✅ Fully Supported | Native window with webview |
-| Web | ✅ Fully Supported | WASM + JavaScript |
-| Mobile | ✅ Fully Supported | Native webview on iOS/Android |
+| Desktop (Windows/macOS/Linux) | Fully Supported | Native webview |
+| Web (WASM) | Fully Supported | WASM + JavaScript |
+| Mobile (iOS/Android) | Fully Supported | Native webview |
 
-## Best Practices
+## Examples
 
-### 1. Bundle Optimization
-
-- Use production builds for React (`npm run build`)
-- Minimize bundle size with code splitting
-- Lazy load heavy components
-
-### 2. Error Handling
-
-```typescript
-try {
-  const data = await ipcRequest('ipc://api/endpoint');
-} catch (error) {
-  console.error('IPC request failed:', error);
-  // Show user-friendly error message
-}
-```
-
-### 3. State Management
-
-- Use React Query or SWR for server state
-- Keep UI state in React
-- Use IPC bridge for Rust-side data only
-
-### 4. Performance
-
-- Batch IPC requests when possible
-- Use streaming for large data transfers
-- Cache responses in React
-
-## Troubleshooting
-
-### React Bundle Not Loading
-
-- Verify asset path is correct
-- Check browser console for errors
-- Ensure bundle is built (`npm run build`)
-
-### IPC Bridge Not Available
-
-- Confirm bridge is initialized before React loads
-- Check `window.dioxusBridge` exists in browser console
-- Verify bridge script is evaluated
-
-### TypeScript Errors
-
-- Ensure `types.ts` is copied to React project
-- Update types if bridge API changes
-- Check TypeScript compiler options
+See [dioxus-react-example](https://github.com/deckyfx/dioxus-react-example) for a complete working app with IPC routes, event streaming, Tailwind CSS, and shadcn/ui components.
 
 ## Contributing
 
@@ -408,6 +197,8 @@ at your option.
 
 ## Related
 
-- [dioxus-ipc-bridge](https://github.com/yourusername/dioxus-ipc-bridge) - Core IPC bridge library
+- [dioxus-react-example](https://github.com/deckyfx/dioxus-react-example) - Complete working example app
+- [dioxus-ipc-bridge](https://github.com/deckyfx/LearningDioxus) - Core IPC bridge library
+- [dioxus-react-bridge](https://github.com/deckyfx/dioxus-react-bridge) - React hooks and components for IPC
 - [Dioxus](https://dioxuslabs.com/) - Rust GUI framework
 - [React](https://react.dev/) - JavaScript UI library

@@ -1,6 +1,6 @@
 [package]
 name = "deckyfx-dioxus-react-integration"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Decky Fx"]
 license = "MIT OR Apache-2.0"
@@ -13,7 +13,7 @@ readme = "README.md"
 [dependencies]
 dioxus = { version = "0.7.0" }
 # Use path for local development, version for published crate
-deckyfx-dioxus-ipc-bridge = { version = "0.1", path = "../dioxus-ipc-bridge" }
+deckyfx-dioxus-ipc-bridge = { version = "0.2", path = "../dioxus-ipc-bridge" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 once_cell = { version = "1.20", optional = true }
