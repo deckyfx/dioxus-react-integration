@@ -2,6 +2,8 @@
 
 > **DEPRECATED** — This repository is moving to [dx-react/integration](https://github.com/dx-react/integration). This repo will be archived once the migration is complete.
 
+> **Compatibility**: Currently tested with **Dioxus 0.7.3**
+
 [![Crates.io](https://img.shields.io/crates/v/deckyfx-dioxus-react-integration.svg)](https://crates.io/crates/deckyfx-dioxus-react-integration)
 [![Documentation](https://docs.rs/deckyfx-dioxus-react-integration/badge.svg)](https://docs.rs/deckyfx-dioxus-react-integration)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
@@ -199,8 +201,9 @@ at your option.
 
 ## Related
 
-- [dioxus-react-example](https://github.com/deckyfx/dioxus-react-example) - Complete working example app
-- [dioxus-ipc-bridge](https://github.com/deckyfx/LearningDioxus) - Core IPC bridge library
-- [dioxus-react-bridge](https://github.com/deckyfx/dioxus-react-bridge) - React hooks and components for IPC
+- [deckyfx/dioxus-react-example](https://github.com/deckyfx/dioxus-react-example) - Complete working example app
+- [deckyfx/dioxus-ipc-bridge](https://github.com/deckyfx/dioxus-ipc-bridge) - Core IPC bridge library
+- [deckyfx/dioxus-ipc-bridge-macros](https://github.com/deckyfx/dioxus-ipc-bridge-macros) - Proc macros for route handlers
+- [deckyfx/dioxus-react-bridge](https://github.com/deckyfx/dioxus-react-bridge) - React hooks and components for IPC
 - [Dioxus](https://dioxuslabs.com/) - Rust GUI framework
 - [React](https://react.dev/) - JavaScript UI library
