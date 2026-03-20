@@ -99,6 +99,16 @@ fn App() -> Element {
 }
 ```
 
+## Changelog
+
+### v0.2.2
+
+- **Updated**: Depends on `deckyfx-dioxus-ipc-bridge` v0.2.1 which fixes method-based route matching (GET and POST on the same path now work correctly).
+
+### v0.2.1
+
+- Initial v0.2 patch release.
+
 ## How It Works
 
 ### Build Pipeline

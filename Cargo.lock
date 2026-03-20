@@ -545,7 +545,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "deckyfx-dioxus-ipc-bridge"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "deckyfx-dioxus-ipc-bridge-macros",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "deckyfx-dioxus-react-integration"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "deckyfx-dioxus-ipc-bridge",
  "dioxus",
